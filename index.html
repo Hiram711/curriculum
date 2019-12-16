@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>课表</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="white" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        font-size: 0.875rem;
+        font-family: "Palatino Linotype", "Book Antiqua", Palatino, Helvetica,
+          STKaiti, SimSun, serif;
+      }
+      .day {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .c {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        word-wrap: break-word;
+        border: 1px solid #000;
+        border-left: none;
+        border-top: none;
+      }
+      .c > span {
+        display: flex;
+        padding: 2px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js");
+      }
+      const baseh = 100 / 12;
+      fetch("./config.json").then(res =>
+        res.json().then(config => {
+          const curriculum = config.课表;
+          const start = new Date(config.开学日期);
+          start.setDate(start.getDate() - start.getDay() + 1);
+          const weekNumber = Math.ceil((Date.now() - start) / (86400000 * 7));
+          const basew = 100 / curriculum.length;
+          const __day = document.createElement("div");
+          __day.classList.add("day");
+          for (let i = 1; i <= 12; ++i) {
+            const __c = document.createElement("div");
+            __c.classList.add("c");
+            __c.innerText = i;
+            __c.style.height = baseh + "vh";
+            __day.appendChild(__c);
+          }
+          document.body.appendChild(__day);
+          for (const d of curriculum) {
+            let cnt = 1;
+            const day = document.createElement("div");
+            day.classList.add("day");
+            for (const c of d) {
+              if (cnt < c.第几节.从) {
+                const elt = document.createElement("div");
+                elt.classList.add("c");
+                elt.style.height = baseh * (c.第几节.从 - cnt) + "vh";
+                day.appendChild(elt);
+                cnt = c.第几节.从;
+              }
+              const elt = document.createElement("div");
+              elt.classList.add("c");
+              const cname = document.createElement("span");
+              cname.classList.add("cname");
+              cname.innerText = c.课程;
+              const tname = document.createElement("span");
+              tname.classList.add("tname");
+              tname.innerText = c.老师;
+              const pname = document.createElement("span");
+              pname.classList.add("pname");
+              pname.innerText = c.教室;
+              elt.appendChild(cname);
+              elt.appendChild(tname);
+              elt.appendChild(pname);
+              elt.style.height = baseh * (c.第几节.到 - c.第几节.从 + 1) + "vh";
+              cnt = c.第几节.到 + 1;
+              if (c.第几周.到 < weekNumber || c.第几周.从 > weekNumber) {
+                elt.style.backgroundColor = "gray";
+              }
+              day.appendChild(elt);
+            }
+            if (cnt < 13) {
+              const elt = document.createElement("div");
+              elt.classList.add("c");
+              elt.style.height = baseh * (13 - cnt) + "vh";
+              day.appendChild(elt);
+            }
+            day.style.width = basew + "%";
+            document.body.appendChild(day);
+          }
+        })
+      );
+    </script>
+  </body>
+</html>
